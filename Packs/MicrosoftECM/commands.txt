@@ -1,0 +1,3 @@
+!sccm-get-installed-softwares ComputerName=EC2AMAZ-2AKQ815
+!sccm-last-log-on-user ComputerName=EC2AMAZ-2AKQ815
+!sccm-get-primary-user ComputerName=EC2AMAZ-2AKQ815
