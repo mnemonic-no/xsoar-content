@@ -4,18 +4,16 @@ commonfields:
 name: Microsoft Endpoint Configuration Manager
 display: Microsoft Endpoint Configuration Manager
 category: IT Services
-description: This is the Microsoft Endpoint Configuration Manager integration
+description: The configuration manager provides the overall Configuration Management (CM) infrastructure and environment to the product development team
 configuration:
 - display: ECM Server URL (e.g. 192.168.64.128)
   name: ComputerName
   type: 0
   required: true
-- display: Username
+- display: Username i.e DOMAIN\username
   name: credentials
   type: 9
   required: true
-  additionalinfo: Specifies the user name for the account used to create a session
-    on the remote ECM computer. For example 'DOMAIN\username'
 - display: ECM Site Code
   name: SiteCode
   type: 0
@@ -761,7 +759,57 @@ script:
     - name: operation_id
       required: true
       description: The script invocation operation ID
+    outputs:
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ClientOperationId
+      description: The script invocation operation ID
+      type: number
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.CollectionId
+      description: The collection ID of the device on which the script was invoked
+        on
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.CollectionName
+      description: The collection Name of the device on which the script was invoked
+        on
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.DeviceName
+      description: The name of the device on which the script was invoked on
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ResourceId
+      description: The resource ID of the device on which the script was invoked on
+      type: number
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.LastUpdateTime
+      description: The last time the Invocation result object was updated
+      type: date
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptExecutionState
+      description: The state of the script invocation
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptExitCode
+      description: The exit code of the script invocation
+      type: number
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptGuid
+      description: 'The unique identifier of the script '
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptLastModifiedDate
+      description: The date of the script's last modification
+      type: date
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptName
+      description: The name of the script
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptOutput
+      description: The output of the script invocation
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptOutputHash
+      description: The hash of the output of the script invocation
+      type: string
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.ScriptVersion
+      description: The version of the script when it was invoked
+      type: number
+    - contextPath: MicrosoftECM.ScriptsInvocationResults.TaskID
+      description: The unique identifier of the invocation
+      type: string
     description: Gets a script invocation results
   dockerimage: mcr.microsoft.com/powershell:centos-7
   runonce: false
 fromversion: 5.5.0
+tests:
+- No test

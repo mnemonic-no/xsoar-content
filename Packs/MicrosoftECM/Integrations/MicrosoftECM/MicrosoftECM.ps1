@@ -222,37 +222,53 @@ Function ValidateIncludeOrExcludeDeviceCollectionParameters($CollectionID, $Coll
 }
 <#
 .DESCRIPTION
-This function Parses A configuration manager collection object into PSCustomObject with selected keys.
+This function Parses A configuration manager collections objects into PSCustomObject with selected keys.
 
-.PARAMETER collection
-Specifies collection to parse
+.PARAMETER collections
+Specifies collections to parse
 
 .OUTPUTS
 Return the PSCustomObject with the selected collection keys
 #>
-Function ParseCollectionObject($collection)
+Function ParseCollectionObject($Collections)
 {
-	[PSCustomObject]@{
-		Name = $collection.Name
-		ID = $collection.CollectionID
-		Type = $COLLECTION_TYPE_MAPPING.Get_Item($collection.CollectionType)
-		Comment = $collection.Comment
-		CurrentStatus = $COLLECTION_CURRENT_STATUS_MAPPING.Get_Item($collection.CurrentStatus)
-		CollectionRules = ($collection.CollectionRules -Join ",")
-		HasProvisionedMember = "$( $collection.HasProvisionedMember )"
-		IncludeExcludeCollectionsCount = "$( $collection.IncludeExcludeCollectionsCount )"
-		IsBuiltIn = "$( $collection.IsBuiltIn )"
-		IsReferenceCollection = "$( $collection.IsReferenceCollection )"
-		LastChangeTime = ParseDateTimeObjectToIso $collection.LastChangeTime
-		LastMemberChangeTime = ParseDateTimeObjectToIso $collection.LastMemberChangeTime
-		LastRefreshTime = ParseDateTimeObjectToIso $collection.LastRefreshTime
-		LimitToCollectionID = $collection.LimitToCollectionID
-		LimitToCollectionName = $collection.LimitToCollectionName
-		LocalMemberCount = "$( $collection.LocalMemberCount )"
-		MemberClassName = "$( $collection.MemberClassName )"
-		MemberCount = "$( $collection.MemberCount )"
-		UseCluster = "$( $collection.UseCluster )"
+	if ($Collections)
+	{
+		$output = [PSCustomObject]@{
+			"MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = $Collections | ForEach-Object {
+				[PSCustomObject]@{
+					Name = $_.Name
+					ID = $_.CollectionID
+					Type = $COLLECTION_TYPE_MAPPING.Get_Item($_.CollectionType)
+					Comment = $_.Comment
+					CurrentStatus = $COLLECTION_CURRENT_STATUS_MAPPING.Get_Item($_.CurrentStatus)
+					CollectionRules = ($collection.CollectionRules -Join ",")
+					HasProvisionedMember = "$( $_.HasProvisionedMember )"
+					IncludeExcludeCollectionsCount = "$( $_.IncludeExcludeCollectionsCount )"
+					IsBuiltIn = "$( $_.IsBuiltIn )"
+					IsReferenceCollection = "$( $_.IsReferenceCollection )"
+					LastChangeTime = ParseDateTimeObjectToIso $_.LastChangeTime
+					LastMemberChangeTime = ParseDateTimeObjectToIso $_.LastMemberChangeTime
+					LastRefreshTime = ParseDateTimeObjectToIso $_.LastRefreshTime
+					LimitToCollectionID = $_.LimitToCollectionID
+					LimitToCollectionName = $_.LimitToCollectionName
+					LocalMemberCount = "$( $_.LocalMemberCount )"
+					MemberClassName = "$( $_.MemberClassName )"
+					MemberCount = "$( $_.MemberCount )"
+					UseCluster = "$( $_.UseCluster )"
+				}
+			}
+		}
+		$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Collection List"
+		$output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | ForEach-Object {$_.CollectionRules = $_.CollectionRules.Split("`n'")}
+		ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $_ | Out-Null
 	}
+	else
+	{
+		$MDOutput = "### Collection List`nNo results found."
+		ReturnOutputs $MDOutput | Out-Null
+	}
+	
 }
 <#
 .DESCRIPTION
@@ -499,19 +515,7 @@ Function GetCollectionList($collectionType, $CollectionID, $CollectionName)
 			}
 		}
 	}
-	if ($Collections)
-	{
-		$output = [PSCustomObject]@{
-			"MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = $Collections | ForEach-Object { ParseCollectionObject $_ }
-		}
-		$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Collection List"
-		ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $Collections | Out-Null
-	}
-	else
-	{
-		$MDOutput = "### Collection List`nNo results found."
-		ReturnOutputs $MDOutput | Out-Null
-	}
+	ParseCollectionObject $Collections
 }
 Function GetDeviceList($CollectionID, $CollectionName, $DeviceName, $resourceID)
 {
@@ -528,6 +532,7 @@ Function GetDeviceList($CollectionID, $CollectionName, $DeviceName, $resourceID)
 		Set-Location $env:SMS_ADMIN_UI_PATH\..\
 		Import-Module .\ConfigurationManager.psd1
 		Set-Location "$( $SiteCode ):"
+		$CMPSSuppressFastNotUsedCheck = $true
 		switch ($parameters.usedParameterName)
 		{
 			"device_name" {
@@ -566,7 +571,7 @@ Function GetDeviceList($CollectionID, $CollectionName, $DeviceName, $resourceID)
 					DeviceOS = $_.DeviceOS
 					DeviceOSBuild = $_.DeviceOSBuild
 					Domain = $_.Domain
-					IsActive = "$_.IsActive"
+					IsActive = "$( $_.IsActive )"
 					LastActiveTime = ParseDateTimeObjectToIso $_.LastActiveTime
 					LastHardwareScan = ParseDateTimeObjectToIso $_.LastHardwareScan
 					LastInstallationError = ParseDateTimeObjectToIso $_.LastInstallationError
@@ -715,7 +720,6 @@ Function InvocationResults($operationID)
 					ScriptOutput = $_.ScriptOutput
 					ScriptOutputHash = $_.ScriptOutputHash
 					ScriptVersion = $_.ScriptVersion
-					SiteNumber = $_.SiteNumber
 					TaskID = $_.TaskID
 				}
 			}
@@ -739,9 +743,7 @@ Function CreateDeviceCollection($comment, $CollectionName, $limitingCollectionNa
 		$CMPSSuppressFastNotUsedCheck = $true
 		New-CMCollection -Name $CollectionName -CollectionType "Device" -Comment $comment -LimitingCollectionName $limitingCollectionName
 	}
-	$output = [PSCustomObject]@{ "MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = ParseCollectionObject $collection }
-	$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Collection Created"
-	ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $collection | Out-Null
+	ParseCollectionObject $collection
 }
 
 
@@ -768,9 +770,7 @@ Function AddMembersToDeviceCollection($CollectionID, $CollectionName, $deviceRes
 			Add-CMDeviceCollectionDirectMembershipRule -ResourceId $resourceIDs -CollectionName $CollectionName -PassThru
 		}
 	}
-	$output = [PSCustomObject]@{ "MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = ParseCollectionObject $result }
-	$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Updated Collection"
-	ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $result | Out-Null
+	ParseCollectionObject $result
 }
 
 Function IncludeDeviceCollection($CollectionID, $CollectionName, $includeCollectionID, $includeCollectionName)
@@ -804,9 +804,7 @@ Function IncludeDeviceCollection($CollectionID, $CollectionName, $includeCollect
 			}
 		}
 	}
-	$output = [PSCustomObject]@{ "MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = ParseCollectionObject $result }
-	$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Updated Collection"
-	ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $result | Out-Null
+	ParseCollectionObject $result
 }
 
 Function ExcludeDeviceCollection($CollectionID, $CollectionName, $excludeCollectionID, $excludeCollectionName)
@@ -840,9 +838,7 @@ Function ExcludeDeviceCollection($CollectionID, $CollectionName, $excludeCollect
 			}
 		}
 	}
-	$output = [PSCustomObject]@{ "MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = ParseCollectionObject $result }
-	$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Updated Collection"
-	ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $result | Out-Null
+	ParseCollectionObject $result
 }
 
 Function AddMembersToCollectionByQuery($CollectionID, $CollectionName, $queryExpression, $ruleName)
@@ -865,9 +861,7 @@ Function AddMembersToCollectionByQuery($CollectionID, $CollectionName, $queryExp
 			Add-CMDeviceCollectionQueryMembershipRule -CollectionName $CollectionName -RuleName $ruleName -QueryExpression $queryExpression -PassThru
 		}
 	}
-	$output = [PSCustomObject]@{ "MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" = ParseCollectionObject $result }
-	$MDOutput = $output."MicrosoftECM.Collections(val.ID && val.ID === obj.ID)" | TableToMarkdown -Name "Updated Collection"
-	ReturnOutputs -ReadableOutput $MDOutput -Outputs $output -RawResponse $result | Out-Null
+	ParseCollectionObject $result
 }
 
 Function StartService($serviceName, $CollectionID, $CollectionName, $DeviceName)
