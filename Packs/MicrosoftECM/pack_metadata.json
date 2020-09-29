@@ -1,6 +1,6 @@
 {
-    "name": "MicrosoftECM",
-    "description": "MicrosoftECM",
+    "name": "Microsoft Endpoint Configuration Manager",
+    "description": "This is the Microsoft Endpoint Configuration Manager integration",
     "support": "xsoar",
     "currentVersion": "1.0.0",
     "author": "Cortex XSOAR",

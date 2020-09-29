@@ -1,38 +1,31 @@
 commonfields:
-  id: MicrosoftECM
+  id: Microsoft Endpoint Configuration Manager
   version: -1
-name: MicrosoftECM
-display: MicrosoftECM (SCCM)
+name: Microsoft Endpoint Configuration Manager
+display: Microsoft Endpoint Configuration Manager
 category: IT Services
-description: This is the Hello World integration for getting started.
-detaileddescription: |-
-  ## Hello World
-  - This section explains how to configure the instance of HelloWorld in Cortex XSOAR.
-  - You can use the following API Key: `43ea9b2d-4998-43a6-ae91-aba62a26868c`
+description: This is the Microsoft Endpoint Configuration Manager integration
 configuration:
-- display: SCCM server IP
+- display: ECM Server URL (e.g. 192.168.64.128)
   name: ComputerName
   type: 0
-  required: false
-- display: User Name
-  name: UserName
-  type: 0
-  required: false
-  additionalinfo: Specifies the user name for the account used to create a session
-    on the remote SCCM computer. For example 'DOMAIN\username'
-- display: The password for the given user
-  name: password
-  type: 14
   required: true
-- display: SCCM site code
+- display: Username
+  name: credentials
+  type: 9
+  required: true
+  additionalinfo: Specifies the user name for the account used to create a session
+    on the remote ECM computer. For example 'DOMAIN\username'
+- display: ECM Site Code
   name: SiteCode
   type: 0
   required: true
+  additionalinfo: To get the site code in the Configuration manager UI, go to Administration -> Site configuration -> Sites and look at the `Site Code` tab
 script:
   script: ''
   type: powershell
   commands:
-  - name: ms-ecm-last-log-on-user
+  - name: ms-ecm-user-last-log-on
     arguments:
     - name: device_name
       required: true
@@ -54,7 +47,7 @@ script:
       description: The name of the computer
       type: string
     description: Gets the last user that logged on to a given computer name
-  - name: ms-ecm-get-primary-user
+  - name: ms-ecm-user-get-primary
     arguments:
     - name: device_name
       required: true
@@ -79,16 +72,10 @@ script:
         Device Unknown'
     - name: collection_id
       description: Specifies a collection ID. If you do not specify a collection,
-        all collections in the hierarchy are returned
+        all collections in the hierarchy are returned (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
       description: Specifies a collection name. If you do not specify a collection,
-        all collections in the hierarchy are returned
-    - name: distribution_point_group_id
-      description: Specifies the ID of the distribution point group that is associated
-        with the collection.
-    - name: distribution_point_group_name
-      description: Specifies the name of the distribution point group that is associated
-        with a collection.
+        all collections in the hierarchy are returned (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.Collections.Name
       description: The collection's name
@@ -154,19 +141,16 @@ script:
   - name: ms-ecm-device-list
     arguments:
     - name: collection_id
-      description: Specifies an ID for a device collection
+      description: Specifies an ID for a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the name of a device collection
+      description: Specifies the name of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: device_name
-      description: Specifies the name of the device
+      description: Specifies the name of the device (can be retrived via `!ms-ecm-device-list`)
     - name: resource_id
-      description: Specifies the resource ID of a device
-    - name: threat_id
-      description: Specifies an ID of a threat
-    - name: threat_name
-      description: Specifies a name of a threat
+      description: Specifies the resource ID of a device (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.Devices.Name
+      description: The name of the device
       type: string
     - contextPath: MicrosoftECM.Devices.ClientVersion
       description: Version of the installed client software
@@ -221,19 +205,13 @@ script:
     - contextPath: MicrosoftECM.Devices.Status
       description: Current status
       type: string
-    - contextPath: MicrosoftECM.Devices
-    - contextPath: MicrosoftECM.Devices
-    - contextPath: MicrosoftECM.Devices
-    - contextPath: MicrosoftECM.Devices
-    - contextPath: MicrosoftECM.Devices
-    - contextPath: MicrosoftECM.Devices
     description: Gets a Configuration Manager device
-  - name: ms-ecm-scripts-list
+  - name: ms-ecm-script-list
     arguments:
     - name: author
-      description: Specifies an author
+      description: Specifies the author of the script (can be retrived via `!ms-ecm-script-list`)
     - name: script_name
-      description: Specifies a script name
+      description: Specifies a script name (can be retrived via `!ms-ecm-script-list`)
     outputs:
     - contextPath: MicrosoftECM.Scripts.ApprovalState
       description: The approval state of the script
@@ -329,11 +307,11 @@ script:
     arguments:
     - name: script_guid
       required: true
-      description: Specifies the script ID
+      description: Specifies the script ID (can be retrived via `!ms-ecm-script-list`)
     - name: collection_id
-      description: Specifies the collection ID
+      description: Specifies the collection ID (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the collection name
+      description: Specifies the collection name (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: device_name
       description: Specifies a device name in Configuration Manager
     outputs:
@@ -351,7 +329,7 @@ script:
       description: Specifies a comment about the approval of the script
     - name: script_guid
       required: true
-      description: Specifies the script ID
+      description: Specifies the script ID (can be retrived via `!ms-ecm-script-list`)
     description: Approves a Configuration Manager PowerShell script
   - name: ms-ecm-device-collection-create
     arguments:
@@ -363,14 +341,13 @@ script:
       description: Specifies a name for the collection
     - name: limiting_collection_name
       required: true
-      description: Specifies the name of a collection to use as a scope for this collection
+      description: Specifies the name of a collection to use as a scope for this collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.Collections.Name
       description: The collection's name
       type: string
     - contextPath: MicrosoftECM.Collections.ID
-      description: Unique auto-generated ID containing eight characters. The default
-        value is ""
+      description: Unique auto-generated ID containing eight characters.
       type: string
     - contextPath: MicrosoftECM.Collections.Type
       description: The type of the collection
@@ -427,13 +404,15 @@ script:
       type: string
     description: Creates a Configuration Manager collection
   - name: ms-ecm-device-collection-members-add
+    description: Adds a Direct Rule membership to a device collection
     arguments:
     - name: collection_id
-      description: Specifies the ID of a device collection
+      description: Specifies the ID of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the name of a device collection
+      description: Specifies the name of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: device_resource_ids
       required: true
+      description: A comma seperated list of devices resource IDs (can be retrived via `!ms-ecm-device-list`)
     outputs:
     - contextPath: MicrosoftECM.Collections.Name
       description: The collection's name
@@ -498,15 +477,15 @@ script:
   - name: ms-ecm-device-collection-include
     arguments:
     - name: collection_id
-      description: Specifies the ID of a device collection
+      description: Specifies the ID of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the name of a device collection
+      description: Specifies the name of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: include_collection_id
       description: Specifies the ID of a device collection to include in the membership
-        rule
+        rule (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: include_collection_name
       description: Specifies the name of a device collection to include in the membership
-        rule
+        rule (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.Collections.Name
       description: The collection's name
@@ -572,15 +551,15 @@ script:
   - name: ms-ecm-device-collection-exclude
     arguments:
     - name: collection_id
-      description: Specifies the ID of a device collection
+      description: Specifies the ID of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the name of a device collection
+      description: Specifies the name of a device collection (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: exclude_collection_id
       description: Specifies the ID of a device collection to exclude from the membership
-        rule
+        rule (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: exclude_collection_name
       description: Specifies the name of a device collection to exclude from the membership
-        rule
+        rule (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.Collections.Name
       description: The collection's name
@@ -647,12 +626,12 @@ script:
   - name: ms-ecm-device-collection-members-by-query-add
     arguments:
     - name: collection_id
-      description: Specifies the ID of the device collection where the rule is applied
+      description: Specifies the ID of the device collection where the rule is applied (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: Specifies the name of the device collection where the rule is applied
+      description: Specifies the name of the device collection where the rule is applied (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: query_expression
       required: true
-      description: Specifies the query expression that Configuration Manager uses
+      description: Specifies the query expression that Configuration Manager uses. For example "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where (ClientType = 1) OR (SMS_R_System.AgentEdition0 = 5)"
         to update the device collections
     - name: rule_name
       required: true
@@ -713,24 +692,24 @@ script:
       description: A count of the collection members.
       type: number
     - contextPath: MicrosoftECM.Collections.UseCluster
-      description: A comma separated list of resource IDs  e.g 0001,0002
+      description: A comma separated list of resource IDs e.g 0001,0002
       type: boolean
     - contextPath: MicrosoftECM.Collections.CollectionRules
       description: Name of the defining membership criteria for the collection
       type: string
     description: Adds a query membership rule to one or more Configuration Manager
       device collections
-  - name: ms-ecm-start-service
+  - name: ms-ecm-service-start
     arguments:
     - name: service_name
       required: true
       description: The name of the service
     - name: device_name
-      description: The device name to start the service in
+      description: The device name to start the service in. (can be retrived via `!ms-ecm-device-list`)
     - name: collection_id
-      description: The ID of the collection to start the service in
+      description: The ID of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     - name: collection_name
-      description: The name of the collection to start the service in
+      description: The name of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.ScriptsInvocation.OperationID
       description: The script execution operation ID
@@ -738,18 +717,18 @@ script:
     - contextPath: MicrosoftECM.ScriptsInvocation.ReturnValue
       description: The script execution return value
       type: number
-    description: Starts a service on a device or collection
-  - name: ms-ecm-restart-service
+    description: Starts a service on a device or collection (Implemented by creating and invoking a script named `XSOAR StartService`)
+  - name: ms-ecm-service-restart
     arguments:
     - name: service_name
       required: true
       description: The name of the service
-    - name: collection_id
-      description: The ID of the collection to restart the service in
-    - name: collection_name
-      description: The name of the collection to restart the service in
     - name: device_name
-      description: The device name to restart the service in
+      description: The device name to start the service in. (can be retrived via `!ms-ecm-device-list`)
+    - name: collection_id
+      description: The ID of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
+    - name: collection_name
+      description: The name of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.ScriptsInvocation.OperationID
       description: The script execution operation ID
@@ -757,17 +736,18 @@ script:
     - contextPath: MicrosoftECM.ScriptsInvocation.ReturnValue
       description: The script execution return value
       type: number
-    description: Restarts a service on a device or collection
-  - name: ms-ecm-stop-service
+    description: Restarts a service on a device or collection (Implemented by creating and invoking a script named `XSOAR RestartService`)
+  - name: ms-ecm-service-stop
     arguments:
     - name: service_name
+      required: true
       description: The name of the service
-    - name: collection_id
-      description: The ID of the collection to stop the service in
-    - name: collection_name
-      description: The name of the collection to stop the service in
     - name: device_name
-      description: The device name to stop the service in
+      description: The device name to start the service in. (can be retrived via `!ms-ecm-device-list`)
+    - name: collection_id
+      description: The ID of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
+    - name: collection_name
+      description: The name of the collection to start the service in. (can be retrived via `!ms-ecm-collection-list collection_type="Device"`)
     outputs:
     - contextPath: MicrosoftECM.ScriptsInvocation.OperationID
       description: The script execution operation ID
@@ -775,7 +755,13 @@ script:
     - contextPath: MicrosoftECM.ScriptsInvocation.ReturnValue
       description: The script execution return value
       type: number
-    description: Stops a service on a device or collection
+    description: Stops a service on a device or collection (Implemented by creating and invoking a script named `XSOAR StopService`)
+  - name: ms-ecm-script-invocation-results
+    arguments:
+    - name: operation_id
+      required: true
+      description: The script invocation operation ID
+    description: Gets a script invocation results
   dockerimage: mcr.microsoft.com/powershell:centos-7
   runonce: false
 fromversion: 5.5.0

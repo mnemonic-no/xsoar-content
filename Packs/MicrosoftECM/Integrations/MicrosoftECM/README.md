@@ -1,3 +1,9 @@
+## Overview
+
+
+The configuration manager provides the overall Configuration Management (CM) infrastructure and environment to the product development team
+
+This integration was integrated and tested with version 1906 of Configuration Manager
 
 ## Configure SCCM on Cortex XSOAR
 
