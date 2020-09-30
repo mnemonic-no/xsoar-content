@@ -1,4 +1,7 @@
 . $PSScriptRoot\CommonServerPowerShell.ps1
+
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', Scope='Function', Target='*')]
+
 $COLLECTION_TYPE_MAPPING = @{
 	"0" = "Root"
 	"1" = "User"
@@ -40,7 +43,7 @@ Function ParseDateTimeObjectToIso($date)
 {
 	if ($date)
 	{
-		return $date.ToUniversalTime().ToString("yyyy-mm-ddTHH:MM:ssZ")
+		return $date.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 	}
 	return $null
 }
@@ -142,7 +145,6 @@ Function ValidateGetDeviceListParams($CollectionID, $CollectionName, $DeviceName
 		return "resource_id"
 	}
 	return ""
-	
 }
 <#
 .DESCRIPTION
@@ -905,6 +907,7 @@ Function TestModule()
 
 function Main
 {
+	[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '')]
 	# Parse Params
 	$computerName = $demisto.Params()['ComputerName']
 	$userName = $demisto.Params()['credentials']['identifier']
