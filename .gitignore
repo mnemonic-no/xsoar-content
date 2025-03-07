@@ -57,6 +57,10 @@ Packs/**/Integrations/**/Pipfile
 Packs/**/Integrations/**/Pipfile.lock
 Packs/**/Scripts/**/Pipfile.lock
 Packs/**/Scripts/**/Pipfile
+Packs/**/Integrations/**/pyproject.toml
+Packs/**/Integrations/**/poetry.lock
+Packs/**/Scripts/**/pyproject.toml
+Packs/**/Scripts/**/poetry.lock
 
 # coverage related
 /coverage_report
