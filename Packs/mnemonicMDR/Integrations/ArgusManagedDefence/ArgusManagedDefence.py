@@ -1614,7 +1614,9 @@ def get_vulnerability_by_id_command(args: dict) -> CommandResults:
     return CommandResults(readable_output=pretty_print_vulnerability([result["data"]]))
 
 
-def list_vulnerabilities_command(args: dict) -> CommandResult:
+def list_vulnerabilities_command(args: dict) -> CommandResults:
+    context_output = args.get("context_output", "false")
+
     result = list_vulnerabilities(
         asset=args.get("asset"),
         customer=args.get("customer"),
@@ -1748,8 +1750,6 @@ def download_sample_command(args: dict) -> fileResult:
 
 
 def main() -> None:
-    logging.getLogger("argus_cli").setLevel("WARNING")
-
     first_fetch_period = parse_first_fetch(demisto.params().get("first_fetch", "-1 day"))
 
     set_argus_settings(
@@ -1854,10 +1854,13 @@ def main() -> None:
             return_results(cmd(demisto.args()))
 
     # Log exceptions and return errors
-    except AccessDeniedException as denied:
-        demisto.info(denied.message)
-        return_warning(denied.message)
+    except (AccessDeniedException, ArgusException) as ae:
+        msg = f"Argus threw an exception. e={ae.message}"
+        demisto.error(msg)
+        return_error(msg)
     except Exception as e:
+        msg = f"Unexpected exception occurred. e={e}"
+        demisto.error(msg)
         demisto.error(traceback.format_exc())  # print the traceback
         return_error(f"Failed to execute {demisto.command()} command.\nError:\n{str(e)}")
 
