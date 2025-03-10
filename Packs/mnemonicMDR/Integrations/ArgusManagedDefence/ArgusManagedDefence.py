@@ -449,8 +449,8 @@ def get_remote_data_command(
             entries.append(
                 {
                     "Note": True,
-                    "Type": entryTypes["note"],
-                    "ContentsFormat": formats["html"],  # type: ignore
+                    "Type": EntryType.NOTE,
+                    "ContentsFormat": EntryFormat.HTML,  # type: ignore
                     "Contents": pretty_print_comment_html(comment),  # type: ignore
                     "Tags": ["argus_comment"],
                 }
@@ -460,8 +460,8 @@ def get_remote_data_command(
             entries.append(
                 {
                     "Note": True,
-                    "Type": entryTypes["note"],
-                    "ContentsFormat": formats["html"],  # type: ignore
+                    "Type": EntryType.NOTE,
+                    "ContentsFormat": EntryFormat.HTML,  # type: ignore
                     "Contents": (pretty_print_comment_html(comment, "Comment updated")),  # type: ignore
                     "Tags": ["argus_comment"],
                 }
@@ -490,15 +490,45 @@ def get_remote_data_command(
             }
         )
 
-    if "REOPENED" in case.get("flags", []):
-        entries.append(
-            {
-                "Type": EntryType.NOTE,
-                "ContentsFormat": EntryFormat.JSON,  # type: ignore
-                "Contents": {"dbotIncidentReopen": True},
-                "Note": False,
-            }
-        )
+    for flag in case.get("flags", []):
+        match flag:
+            case "REOPENED":
+                entries.append(
+                    {
+                        "Type": EntryType.NOTE,
+                        "ContentsFormat": EntryFormat.JSON,  # type: ignore
+                        "Contents": {"dbotIncidentReopen": True},
+                        "Note": False,
+                    }
+                )
+            case "DESCRIPTION_EDITED":
+                entries.append(
+                    {
+                        "Type": EntryType.NOTE,
+                        "ContentsFormat": EntryFormat.JSON,  # type: ignore
+                        "Contents": "Description edited, is this note needed?",
+                        "Note": False,
+                    }
+                )
+            case "MERGED":
+                msg = f"Argus Case #{case_id} was marked as merged, please see case #{case.get('id')}."
+                contents = (
+                    {
+                        "dbotIncidentClose": True,
+                        "closeReason": "Argus Case merged",
+                        "closeNotes": msg,
+                    }
+                    if close_incident
+                    else msg
+                )
+                entries.append(
+                    {
+                        "Note": True,
+                        "Type": EntryType.NOTE,
+                        "ContentsFormat": EntryFormat.HTML,  # type: ignore
+                        "Contents": contents,  # type: ignore
+                    }
+                )
 
     return GetRemoteDataResponse(case, entries)
 
