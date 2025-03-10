@@ -6761,7 +6761,7 @@ script:
       description: Name of vulnerability
       type: String
     description: Get vulnerability definition metadata
-  dockerimage: demisto/argus-toolbelt:3.0.0.63653
+  dockerimage: demisto/argus-toolbelt:3.0.0.2055215
   isfetch: true
   runonce: false
   subtype: python3
