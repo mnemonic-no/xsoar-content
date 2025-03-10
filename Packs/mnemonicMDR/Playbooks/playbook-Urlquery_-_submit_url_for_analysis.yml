@@ -1,0 +1,227 @@
+contentitemexportablefields:
+  contentitemfields:
+    definitionid: ""
+    fromServerVersion: ""
+    itemVersion: ""
+    packID: ""
+    packName: ""
+    prevname: ""
+    propagationLabels:
+    - mne-utils
+    toServerVersion: ""
+id: da60c80f-09ce-49ce-835a-204e740a2ce2
+inputs:
+- description: The URL to analyse
+  key: url
+  playbookInputQuery: null
+  required: true
+  value: {}
+- description: True/False
+  key: includescreenshots
+  playbookInputQuery: null
+  required: false
+  value:
+    simple: "True"
+- description: True/False
+  key: includedomaingraphs
+  playbookInputQuery: null
+  required: false
+  value:
+    simple: "True"
+- description: True/False
+  key: includeartifacts
+  playbookInputQuery: null
+  required: false
+  value:
+    simple: "True"
+- description: True/False
+  key: includerequests
+  playbookInputQuery: null
+  required: false
+  value:
+    simple: "True"
+name: Urlquery - submit url for analysis
+outputs: []
+starttaskid: "0"
+tasks:
+  "0":
+    continueonerrortype: ""
+    id: "0"
+    ignoreworker: false
+    isautoswitchedtoquietmode: false
+    isoversize: false
+    nexttasks:
+      '#none#':
+      - "1"
+    note: false
+    quietmode: 0
+    separatecontext: false
+    skipunavailable: false
+    task:
+      brand: ""
+      id: cac30fb6-31cd-43eb-80dd-384aaf552127
+      iscommand: false
+      name: ""
+      version: -1
+    taskid: cac30fb6-31cd-43eb-80dd-384aaf552127
+    timertriggers: []
+    type: start
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 50
+        }
+      }
+  "1":
+    continueonerrortype: ""
+    id: "1"
+    ignoreworker: false
+    isautoswitchedtoquietmode: false
+    isoversize: false
+    nexttasks:
+      '#none#':
+      - "2"
+    note: false
+    quietmode: 0
+    scriptarguments:
+      access:
+        simple: public
+      url:
+        simple: ${inputs.url}
+    separatecontext: false
+    skipunavailable: false
+    task:
+      brand: ""
+      description: Submit url for analysis
+      id: 3feff3c0-b713-4f97-8ada-34b2bb103ed1
+      iscommand: true
+      name: Submit URL
+      script: '|||urlquery-submit-url'
+      type: regular
+      version: -1
+    taskid: 3feff3c0-b713-4f97-8ada-34b2bb103ed1
+    timertriggers: []
+    type: regular
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 240
+        }
+      }
+  "2":
+    continueonerrortype: ""
+    id: "2"
+    ignoreworker: false
+    isautoswitchedtoquietmode: false
+    isoversize: false
+    loop:
+      exitCondition: ""
+      iscommand: false
+      max: 100
+      wait: 1
+    nexttasks:
+      '#none#':
+      - "3"
+    note: false
+    quietmode: 0
+    scriptarguments:
+      Ids:
+        simple: ${Urlquery.Submit.queue_id}
+      Interval:
+        simple: "1"
+      PollingCommandArgName:
+        simple: queue_id
+      PollingCommandName:
+        simple: urlquery-submit-status
+      Timeout:
+        simple: "10"
+      dt:
+        simple: Urlquery.Submit(val.status!=="done")
+    separatecontext: false
+    skipunavailable: false
+    task:
+      brand: ""
+      description: |-
+        Use this playbook as a sub-playbook to block execution of the master playbook until a remote action is complete.
+        This playbook implements polling by continuously running the command in Step \#2 until the operation completes.
+        The remote action should have the following structure:
+
+        1. Initiate the operation.
+        2. Poll to check if the operation completed.
+        3. (optional) Get the results of the operation.
+      id: b00a0f6c-ef92-44eb-8b53-22b3cb8c1675
+      iscommand: false
+      name: GenericPolling
+      playbookId: GenericPolling
+      type: playbook
+      version: -1
+    taskid: b00a0f6c-ef92-44eb-8b53-22b3cb8c1675
+    timertriggers: []
+    type: playbook
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 410
+        }
+      }
+  "3":
+    continueonerror: true
+    continueonerrortype: ""
+    id: "3"
+    ignoreworker: false
+    isautoswitchedtoquietmode: false
+    isoversize: false
+    note: false
+    quietmode: 0
+    scriptarguments:
+      includeartifacts:
+        simple: ${inputs.includeartifacts}
+      includedomaingraph:
+        simple: ${inputs.includedomaingraphs}
+      includerequests:
+        simple: ${inputs.includerequests}
+      includescreenshot:
+        simple: ${inputs.includescreenshots}
+      report_id:
+        simple: ${Urlquery.Submit.report_id}
+      retry-count:
+        simple: "10"
+      retry-interval:
+        simple: "20"
+    separatecontext: false
+    skipunavailable: false
+    task:
+      brand: ""
+      description: Fetches report details for a given report ID
+      id: 5516768a-e099-4548-82cc-326b7e348ca3
+      iscommand: true
+      name: Get report
+      script: '|||urlquery-get-report'
+      type: regular
+      version: -1
+    taskid: 5516768a-e099-4548-82cc-326b7e348ca3
+    timertriggers: []
+    type: regular
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 590
+        }
+      }
+version: -1
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 635,
+        "width": 380,
+        "x": 450,
+        "y": 50
+      }
+    }
+  }
