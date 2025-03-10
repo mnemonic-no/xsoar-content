@@ -505,8 +505,8 @@ def get_remote_data_command(
                 entries.append(
                     {
                         "Type": EntryType.NOTE,
-                        "ContentsFormat": EntryFormat.JSON,  # type: ignore
-                        "Contents": "Description edited, is this note needed?",
+                        "ContentsFormat": EntryFormat.HTML,  # type: ignore
+                        "Contents": "Argus Case description edited.",
                         "Note": False,
                     }
                 )
