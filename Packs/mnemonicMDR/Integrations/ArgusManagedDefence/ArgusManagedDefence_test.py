@@ -1,4 +1,5 @@
 import json
+import pytest
 
 BASE_URL = "https://api.mnemonic.no"
 CASE_ID = 1337
@@ -11,6 +12,10 @@ EVENT_TYPE = "NIDS"
 TIMESTAMP = "some-timestamp"
 CUSTOMER_ID = 5381
 EVENT_ID = "some-hash"
+ASSET_ID = "some-hash"
+SAMPLE_ID = "some-sha256"
+VULNERABILITY_UUID = "some-hash"
+VULNERABILITY_DEFINITION_UUID = "some-hash"
 
 
 def test_argus_priority_to_demisto_severity():
@@ -63,8 +68,9 @@ def test_build_argus_priority_from_min_severity():
 
 
 def test_date_time_to_epoch_milliseconds_datetime():
-    from ArgusManagedDefence import date_time_to_epoch_milliseconds
     import datetime
+
+    from ArgusManagedDefence import date_time_to_epoch_milliseconds
 
     date = datetime.datetime(2000, 1, 1, 00, 00, 00)
     timestamp = date.timestamp() * 1000
@@ -72,8 +78,9 @@ def test_date_time_to_epoch_milliseconds_datetime():
 
 
 def test_date_time_to_epoch_milliseconds_str():
-    from ArgusManagedDefence import date_time_to_epoch_milliseconds
     import datetime
+
+    from ArgusManagedDefence import date_time_to_epoch_milliseconds
 
     timestamp = int(datetime.datetime(2000, 1, 1, 00, 00, 00).timestamp() * 1000)
     assert date_time_to_epoch_milliseconds("2000-01-01 00:00:00") == timestamp
@@ -92,8 +99,9 @@ def test_date_time_to_epoch_milliseconds_empty():
 
 
 def test_pretty_print_date_datetime():
-    from ArgusManagedDefence import pretty_print_date, PRETTY_DATE_FORMAT
     import datetime
+
+    from ArgusManagedDefence import PRETTY_DATE_FORMAT, pretty_print_date
 
     date = datetime.datetime(2000, 1, 1, 00, 00, 00)
     assert pretty_print_date(date) == date.strftime(PRETTY_DATE_FORMAT)
@@ -122,18 +130,22 @@ def test_pretty_print_date_empty():
 def test_build_tags_from_list():
     from ArgusManagedDefence import build_tags_from_list
 
-    assert build_tags_from_list(None) == []
-    assert build_tags_from_list([]) == []
-    assert build_tags_from_list(["list must be divisible by two"]) == []
+    assert build_tags_from_list(None) is None
+    assert build_tags_from_list([]) is None
+    with pytest.raises(ValueError) as e:
+        build_tags_from_list(["list must be divisible by two"])
+    assert e.type == ValueError
     assert build_tags_from_list(["foo", "bar"]) == [{"key": "foo", "value": "bar"}]
 
 
 def test_str_to_dict():
     from ArgusManagedDefence import str_to_dict
 
-    assert str_to_dict(None) == {}
-    assert str_to_dict("") == {}
-    assert str_to_dict("one_value") == {}
+    assert str_to_dict(None) is None
+    assert str_to_dict("") is None
+    with pytest.raises(ValueError) as e:
+        str_to_dict("one_value")
+    assert e.type == ValueError
     assert str_to_dict("foo,bar") == {"foo": "bar"}
     assert str_to_dict("foo,bar,key,value") == {"foo": "bar", "key": "value"}
 
@@ -233,9 +245,7 @@ def test_get_remote_data_command(requests_mock):
     result = get_remote_data_command(args)
     assert metadata.get("data").items() <= result.mirrored_object.items()
     assert "xsoar_mirroring" in result.mirrored_object.keys()
-    assert (
-        xsoar_mirroring.items() == result.mirrored_object.get("xsoar_mirroring").items()
-    )
+    assert xsoar_mirroring.items() == result.mirrored_object.get("xsoar_mirroring").items()
     assert {"severity": 1} in result.entries
     assert {"arguscasestatus": "pendingCustomer"} in result.entries
 
@@ -299,6 +309,7 @@ def test_update_remote_system_command(requests_mock):
         "status": 2,  # Done
         "delta": {"severity": 2},
         "incidentChanged": True,
+        "context_output": "true",
     }
     assert update_remote_system_command(args) == str(CASE_ID)
 
@@ -313,6 +324,7 @@ def test_update_remote_system_command_no_change(requests_mock):
         "status": "",
         "delta": {},
         "incidentChanged": False,
+        "context_output": "true",
     }
     assert update_remote_system_command(args) == str(CASE_ID)
 
@@ -324,7 +336,12 @@ def test_add_case_tag_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/tags"
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "key": "test_key", "value": "test_value"}
+    args = {
+        "case_id": CASE_ID,
+        "key": "test_key",
+        "value": "test_value",
+        "context_output": "true",
+    }
     result = add_case_tag_command(args)
     assert result.raw_response == data
 
@@ -336,7 +353,7 @@ def test_add_comment_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/comments"
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "comment": "test_comment"}
+    args = {"case_id": CASE_ID, "comment": "test_comment", "context_output": "true"}
     result = add_comment_command(args)
     assert result.raw_response == data
 
@@ -348,7 +365,7 @@ def test_advanced_case_search_command(requests_mock):
         data = json.load(json_file)
     method_url = "/cases/v2/case/search"
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    result = advanced_case_search_command({})
+    result = advanced_case_search_command({"context_output": "true"})
     assert result.raw_response == data
 
 
@@ -359,7 +376,7 @@ def test_close_case_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/close"
     requests_mock.put(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = close_case_command(args)
     assert result.raw_response == data
 
@@ -377,6 +394,7 @@ def test_create_case_command(requests_mock):
         "service": "administrative",
         "type": "informational",
         "tags": "test_key,test_value",
+        "context_output": "true",
     }
     result = create_case_command(args)
     assert result.raw_response == data
@@ -389,7 +407,7 @@ def test_delete_case_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}"
     requests_mock.delete(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = delete_case_command(args)
     assert result.raw_response == data
 
@@ -401,7 +419,7 @@ def test_delete_comment_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/comments/{COMMENT_ID}"
     requests_mock.delete(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "comment_id": COMMENT_ID}
+    args = {"case_id": CASE_ID, "comment_id": COMMENT_ID, "context_output": "true"}
     result = delete_comment_command(args)
     assert result.raw_response == data
 
@@ -413,7 +431,11 @@ def test_download_attachment_command(requests_mock):
         content = file.read()
     method_url = f"/cases/v2/case/{CASE_ID}/attachments/{ATTACHMENT_ID}/download"
     requests_mock.get(f"{BASE_URL}{method_url}", content=content)
-    args = {"case_id": CASE_ID, "attachment_id": ATTACHMENT_ID}
+    args = {
+        "case_id": CASE_ID,
+        "attachment_id": ATTACHMENT_ID,
+        "context_output": "true",
+    }
     result = download_attachment_command(args)
     assert result["File"] == ATTACHMENT_ID
 
@@ -425,7 +447,12 @@ def test_edit_comment_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/comments/{COMMENT_ID}"
     requests_mock.put(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "comment_id": COMMENT_ID, "comment": "test comment"}
+    args = {
+        "case_id": CASE_ID,
+        "comment_id": COMMENT_ID,
+        "comment": "test comment",
+        "context_output": "true",
+    }
     result = edit_comment_command(args)
     assert result.raw_response == data
 
@@ -437,7 +464,11 @@ def test_get_attachment_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/attachments/{ATTACHMENT_ID}"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "attachment_id": ATTACHMENT_ID}
+    args = {
+        "case_id": CASE_ID,
+        "attachment_id": ATTACHMENT_ID,
+        "context_output": "true",
+    }
     result = get_attachment_command(args)
     assert result.raw_response == data
 
@@ -449,7 +480,7 @@ def test_get_case_metadata_by_id_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = get_case_metadata_by_id_command(args)
     assert result.raw_response == data
 
@@ -461,7 +492,7 @@ def test_list_case_attachments_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/attachments"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = list_case_attachments_command(args)
     assert result.raw_response == data
 
@@ -473,7 +504,7 @@ def test_list_case_tags_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/tags"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = list_case_tags_command(args)
     assert result.raw_response == data
 
@@ -485,7 +516,7 @@ def test_list_case_comments_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/comments"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = list_case_comments_command(args)
     assert result.raw_response == data
 
@@ -497,7 +528,7 @@ def test_remove_case_tag_by_id_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/tags/{TAG_ID}"
     requests_mock.delete(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "tag_id": TAG_ID}
+    args = {"case_id": CASE_ID, "tag_id": TAG_ID, "context_output": "true"}
     result = remove_case_tag_by_id_command(args)
     assert result.raw_response == data
 
@@ -509,7 +540,12 @@ def test_remove_case_tag_by_key_value_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/tags/{TAG_KEY}/{TAG_VALUE}"
     requests_mock.delete(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID, "key": TAG_KEY, "value": TAG_VALUE}
+    args = {
+        "case_id": CASE_ID,
+        "key": TAG_KEY,
+        "value": TAG_VALUE,
+        "context_output": "true",
+    }
     result = remove_case_tag_by_key_value_command(args)
     assert result.raw_response == data
 
@@ -521,7 +557,7 @@ def test_update_case_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}"
     requests_mock.put(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = update_case_command(args)
     assert result.raw_response == data
 
@@ -533,7 +569,7 @@ def test_get_events_for_case_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/events/v1/case/{CASE_ID}"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = get_events_for_case_command(args)
     assert result.raw_response == data
 
@@ -545,7 +581,7 @@ def test_find_aggregated_events_command(requests_mock):
         data = json.load(json_file)
     method_url = "/events/v1/aggregated/search"
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    result = find_aggregated_events_command({})
+    result = find_aggregated_events_command({"context_output": "true"})
     assert result.raw_response == data
 
 
@@ -556,7 +592,7 @@ def test_list_aggregated_events_command(requests_mock):
         data = json.load(json_file)
     method_url = "/events/v1/aggregated"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    result = list_aggregated_events_command({})
+    result = list_aggregated_events_command({"context_output": "true"})
     assert result.raw_response == data
 
 
@@ -574,6 +610,7 @@ def test_get_event(requests_mock):
         "timestamp": TIMESTAMP,
         "customer_id": CUSTOMER_ID,
         "event_id": EVENT_ID,
+        "context_output": "true",
     }
     result = get_event_command(args)
     assert result.raw_response == data
@@ -593,6 +630,7 @@ def test_get_payload_command(requests_mock):
         "timestamp": TIMESTAMP,
         "customer_id": CUSTOMER_ID,
         "event_id": EVENT_ID,
+        "context_output": "true",
     }
     result = get_payload_command(args)
     assert result.raw_response == data
@@ -612,6 +650,7 @@ def test_get_pcap_command(requests_mock):
         "timestamp": TIMESTAMP,
         "customer_id": CUSTOMER_ID,
         "event_id": EVENT_ID,
+        "context_output": "true",
     }
     result = get_pcap_command(args)
     assert result["File"] == f"{EVENT_ID}_pcap"
@@ -627,7 +666,7 @@ def test_search_records_command(requests_mock):
     method_url = "/pdns/v3/search"
 
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    result = search_records_command({"query": query})
+    result = search_records_command({"query": query, "context_output": "true"})
     assert result.raw_response == data
 
 
@@ -640,7 +679,7 @@ def test_fetch_observations_for_domain_command(requests_mock):
     method_url = f"/reputation/v1/observation/domain/{fqdn}"
 
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    result = fetch_observations_for_domain_command({"fqdn": fqdn})
+    result = fetch_observations_for_domain_command({"fqdn": fqdn, "context_output": "true"})
     assert result.raw_response == data
 
 
@@ -654,7 +693,7 @@ def test_fetch_observations_for_i_p_command(requests_mock):
     method_url = f"/reputation/v1/observation/ip/{ip}"
 
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    result = fetch_observations_for_i_p_command({"ip": ip})
+    result = fetch_observations_for_i_p_command({"ip": ip, "context_output": "true"})
     assert result.raw_response == data
 
 
@@ -666,7 +705,7 @@ def test_find_nids_events(requests_mock):
     method_url = "/events/v1/nids/search"
 
     requests_mock.post(f"{BASE_URL}{method_url}", json=data)
-    result = find_nids_events_command({})
+    result = find_nids_events_command({"context_output": "true"})
     assert result.raw_response == data
 
 
@@ -678,7 +717,7 @@ def test_list_nids_events(requests_mock):
     method_url = "/events/v1/nids"
 
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    result = list_nids_events_command({})
+    result = list_nids_events_command({"context_output": "true"})
     assert result.raw_response == data
 
 
@@ -689,7 +728,7 @@ def test_print_case_comments_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}/comments"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = print_case_comments_command(args)
     for comment in result:
         assert comment.get("ContentsFormat") == "html"
@@ -705,7 +744,7 @@ def test_print_case_metadata_by_id_command(requests_mock):
         data = json.load(json_file)
     method_url = f"/cases/v2/case/{CASE_ID}"
     requests_mock.get(f"{BASE_URL}{method_url}", json=data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = print_case_metadata_by_id_command(args)
     assert result.get("ContentsFormat") == "html"
     assert result.get("Type") == 1
@@ -725,8 +764,143 @@ def test_download_case_attachments_command(requests_mock):
         bin_data = file.read()
     method_url = f"/cases/v2/case/{CASE_ID}/attachments/{attachment_id}/download"
     requests_mock.get(f"{BASE_URL}{method_url}", content=bin_data)
-    args = {"case_id": CASE_ID}
+    args = {"case_id": CASE_ID, "context_output": "true"}
     result = download_case_attachments_command(args)
     for file in result:
         assert file.get("File") == "filename"
         assert file.get("Type") == 3  # File
+
+
+def test_get_sample_metadata_command(requests_mock):
+    from ArgusManagedDefence import get_sample_metadata_command
+
+    with open("argus_json/argus_sample_metadata.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/sampledb/v2/sample/{SAMPLE_ID}"
+
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = get_sample_metadata_command({f"sha256": SAMPLE_ID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_list_assets_command(requests_mock):
+    from ArgusManagedDefence import list_assets_command
+
+    with open("argus_json/argus_list_asset.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = "/assets/v2/asset"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = list_assets_command({"context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_get_asset_command(requests_mock):
+    from ArgusManagedDefence import get_asset_command
+
+    with open("argus_json/argus_asset.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/asset/{ASSET_ID}"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = get_asset_command({"id_shortname": ASSET_ID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_add_asset_command(requests_mock):
+    from ArgusManagedDefence import add_asset_command
+
+    with open("argus_json/argus_asset.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/asset"
+    requests_mock.post(f"{BASE_URL}{method_url}", json=data)
+    result = add_asset_command({"context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_delete_asset_command(requests_mock):
+    from ArgusManagedDefence import delete_asset_command
+
+    with open("argus_json/argus_asset.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/asset/{ASSET_ID}"
+    requests_mock.delete(f"{BASE_URL}{method_url}", json=data)
+    result = delete_asset_command({"id_shortname": ASSET_ID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_update_asset_command(requests_mock):
+    from ArgusManagedDefence import update_asset_command
+
+    with open("argus_json/argus_asset.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/asset/{ASSET_ID}"
+    requests_mock.put(f"{BASE_URL}{method_url}", json=data)
+    result = update_asset_command({"id_shortname": ASSET_ID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_get_vulnerability_by_asset_command(requests_mock):
+    from ArgusManagedDefence import get_vulnerability_by_asset_command
+
+    with open("argus_json/argus_vulnerability.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/vulnerability/{ASSET_ID}"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = get_vulnerability_by_asset_command({"id_shortname": ASSET_ID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_get_vulnerability_by_id_command(requests_mock):
+    from ArgusManagedDefence import get_vulnerability_by_id_command
+
+    with open("argus_json/argus_vulnerability.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/vulnerability/{VULNERABILITY_UUID}"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = get_vulnerability_by_asset_command({"vulnerability_uuid": VULNERABILITY_UUID, "context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_list_vulnerabilities_command(requests_mock):
+    from ArgusManagedDefence import list_vulnerabilities_command
+
+    with open("argus_json/argus_vulnerability.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/vulnerability"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = list_vulnerabilities_command({"context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_search_vulnerabilities_command(requests_mock):
+    from ArgusManagedDefence import search_vulnerabilities_command
+
+    with open("argus_json/argus_list_vulnerabilities.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"/assets/v2/vulnerability/search"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = search_vulnerabilities_command({"context_output": "true"})
+    assert result.raw_response == data
+
+
+def test_get_vulnerability_definition_command(requests_mock):
+    from ArgusManagedDefence import get_vulnerability_definition_command
+
+    with open("argus_json/argus_vulnerability_definition.json") as json_file:
+        data = json.load(json_file)
+
+    method_url = f"assets/v2/vulnerability/definition/{VULNERABILITY_DEFINITION_UUID}"
+    requests_mock.get(f"{BASE_URL}{method_url}", json=data)
+    result = search_vulnerabilities_command(
+        {"vulnerability_definition_uuid": VULNERABILITY_DEFINITION_UUID, "context_output": "true"}
+    )
+    assert result.raw_response == data

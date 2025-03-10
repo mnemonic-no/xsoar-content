@@ -1,0 +1,100 @@
+{
+  "responseCode": 0,
+  "limit": 0,
+  "offset": 0,
+  "count": 0,
+  "size": 0,
+  "metaData": {},
+  "messages": [
+    {
+      "message": "string",
+      "messageTemplate": "string",
+      "type": "FIELD_ERROR",
+      "field": "string",
+      "parameter": {},
+      "timestamp": 0
+    }
+  ],
+  "data": {
+    "sha256": "string",
+    "sha1": "string",
+    "md5": "string",
+    "size": 0,
+    "timestamp": 0,
+    "classification": {
+      "version": "string",
+      "type": "string",
+      "superType": "string",
+      "arch": "string",
+      "platform": "string",
+      "meta": {
+        "additionalProp1": {},
+        "additionalProp2": {},
+        "additionalProp3": {}
+      }
+    },
+    "flags": [
+      "exceededMaxSearchableSubmissions"
+    ],
+    "verdict": {
+      "sample": {
+        "id": "string",
+        "size": 0
+      },
+      "job": {
+        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "state": "enqueued"
+      },
+      "analysis": [
+        {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "analyzerName": "string"
+        }
+      ],
+      "createdByUser": {
+        "id": 0,
+        "shortName": "string",
+        "name": "string",
+        "domain": {
+          "id": 0,
+          "name": "string"
+        },
+        "customer": {
+          "id": 0,
+          "name": "string",
+          "shortName": "string",
+          "domain": {
+            "id": 0,
+            "name": "string"
+          }
+        },
+        "type": "user"
+      },
+      "createdTimestamp": 0,
+      "flags": [
+        "manual"
+      ],
+      "comment": "string",
+      "scores": {
+        "additionalProp1": 0,
+        "additionalProp2": 0,
+        "additionalProp3": 0
+      },
+      "categories": {
+        "additionalProp1": 0,
+        "additionalProp2": 0,
+        "additionalProp3": 0
+      },
+      "tags": [
+        {
+          "type": "family",
+          "value": "string",
+          "count": 0
+        }
+      ]
+    },
+    "firstSubmittedTimestamp": 0,
+    "lastSubmittedTimestamp": 0,
+    "deletedTimestamp": 0
+  }
+}

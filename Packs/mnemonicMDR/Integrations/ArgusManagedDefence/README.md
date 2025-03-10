@@ -2,26 +2,30 @@ Rapidly detect, analyse and respond to security threats with mnemonic’s leadin
 
 This integration was integrated and tested with version 5.1.1 argus-toolbelt ([PyPi](https://pypi.org/project/argus-toolbelt)).
 
-## Configure ArgusManagedDefence in Cortex
+## Configure ArgusManagedDefence on Cortex XSOAR
 
+1. Navigate to **Settings** > **Integrations** > **Servers & Services**.
+2. Search for ArgusManagedDefence.
+3. Click **Add instance** to create and configure a new integration instance.
 
-| **Parameter** | **Description** | **Required** |
-| --- | --- | --- |
-| Fetch incidents | Defines if this integration fetches incidents. | False |
-| Incident type | Should be set to Argus Case. | False |
-| API URL | URL to Argus' API Endpoint. | True |
-| API Key | API Key of API user in Argus. | True |
-| Minimum severity of alerts to fetch | Argus Cases with priority lower than this value will be excluded by fetch incidents. | True |
-| First fetch time | How far back should the first run fetch open cases in Argus. | False |
-| Maximum number of incidents per fetch | Maximum number of cases to be fetched from Argus. 0 means up to system limit \(100 000\) | False |
-| Fetch incidents exclude tag | Excludes fetching incidents with the optional tag. May be used to exclude fetching Argus Cases created by XSOAR. Tags in Argus are of key: value pairs. You may exclude with tag key, or key: value pairs by a comma-separated string. | False |
-| Incident Mirroring Direction | Which direction should the integration mirror incidents. | False |
-| Mirroring tag | Names of tags used to mark incident entries to be mirrored. Comma separated. | False |
-| Close Argus Case | If true, when an incident is closed in XSOAR: close the mirrored Argus Case | False |
-| Close XSOAR Incident | If true, when mirrored Argus Case is closed: also close the XSOAR Incident | False |
-| Trust any certificate (not secure) | Skip HTTPS certification verification. | False |
-| Use system proxy settings | Use system proxy settings. | False |
+    | **Parameter** | **Description** | **Required** |
+    | --- | --- | --- |
+    | Fetch incidents | Defines if this integration fetches incidents. | False |
+    | Incident type | Should be set to Argus Case. | False |
+    | API URL | URL to Argus' API Endpoint. | True |
+    | API Key | API Key of API user in Argus. | True |
+    | Minimum severity of alerts to fetch | Argus Cases with priority lower than this value will be excluded by fetch incidents. | True |
+    | First fetch time | How far back should the first run fetch open cases in Argus. | False |
+    | Maximum number of incidents per fetch | Maximum number of cases to be fetched from Argus. 0 means up to system limit \(100 000\) | False |
+    | Fetch incidents exclude tag | Excludes fetching incidents with the optional tag. May be used to exclude fetching Argus Cases created by XSOAR. Tags in Argus are of key: value pairs. You may exclude with tag key, or key: value pairs by a comma-separated string. | False |
+    | Incident Mirroring Direction | Which direction should the integration mirror incidents. | False |
+    | Mirroring tag | Names of tags used to mark incident entries to be mirrored. Comma separated. | False |
+    | Close Argus Case | If true, when an incident is closed in XSOAR: close the mirrored Argus Case | False |
+    | Close XSOAR Incident | If true, when mirrored Argus Case is closed: also close the XSOAR Incident | False |
+    | Trust any certificate (not secure) | Skip HTTPS certification verification. | False |
+    | Use system proxy settings | Use system proxy settings. | False |
 
+4. Click **Test** to validate the URLs, token, and connection.
 
 ### Mirroring
 This integration supports in- and outbound mirroring of incidents. 
@@ -41,7 +45,7 @@ An example use case could be that you are running an XSOAR incident for a while 
 ```
 
 ## Commands
-You can execute these commands from the CLI, as part of an automation, or in a playbook.
+You can execute these commands from the Cortex XSOAR CLI, as part of an automation, or in a playbook.
 After you successfully execute a command, a DBot message appears in the War Room with the command details.
 
 ### argus-get-attachment
@@ -2742,3 +2746,191 @@ There is no context output for this command.
 
 #### Command Example
 ``` !argus-download-case-attachments case_id=123 ```
+
+### argus-get-vulnerability-by-asset
+***
+Get vulnerabilities observed on the requested Asset.
+
+#### Base Command
+
+`argus-get-vulnerability-by-asset`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| id_shortname | Asset ID or short name. | Required |
+| customer | Customer ID or short name (default is user's customer) to help resolve asset, only used when asset's short name was provided. | Optional|
+| include_deleted | Whether to include deleted vulnerabilities, not included by default | Optional |
+| offset | How many vulnerabilities to skip, defaults to 0 | Optional |
+| limit | How many vulnerabilities to return, defaults to all of them | Optional |
+| context_output | Set to true to output context data. By default, only print to war room  | Optional |
+
+
+#### Context Output
+
+| **Path** | **Type** | **Description**                                                           |
+| --- | --- |---------------------------------------------------------------------------|
+| Argus.Vulnerability.data.vulnerabilityID | String | Identifier of vulnerability (e.g. plug-in ID from vulnerability scanner). |
+| Argus.Vulnerability.data.severity | String | Severity of the vulnerability.                                            |
+| Argus.Vulnerability.data.resolution | String | Resolution status of the vulnerability.                                   |
+| Argus.Vulnerability.data.lastUpdatedTimestamp | String | Timestamp when the vulnerability was last updated.                        |
+| Argus.Vulnerability.data.cvss | Number | CVSS of the vulnerability.                                                |
+| Argus.Vulnerability.data.asset.name | String | Name of the asset.                                                        |
+| Argus.Vulnerability.data.id | String | ID of the response object. (unique identifier)                            |
+| Argus.Vulnerability.data.vulnerabilityDefinition.id | String | Unique identifier of the vulnerability definition                         |
+| Argus.Vulnerability.data.observationDescription | String | Description specific to this observed vulnerability.                      |
+| Argus.Vulnerability.data.observationReferences | String | References specific to this observed vulnerability e.g. internal URLS.    |
+| Argus.Vulnerability.data.vulnerabilityDefinition.name | String | Name of vulnerability.                                                    |
+
+#### Command Example
+``` !argus-get-vulnerability-by-asset id_shortname=123-abc-456 limit=2 ```
+
+### argus-list-vulnerabilities
+***
+Basic Vulnerability definition search. Will not return vulnerabilities seen more than 31 days ago.
+
+#### Base Command
+
+`argus-list-vulnerabilities`
+
+#### Input
+
+| **Argument Name**   | **Description** | **Required** |
+|---------------------| --- | --- |
+| customer            | Customer ids or short names | Optional |
+| asset               | Asset ids or short names. Will resolve with the provided customers, or those the current user has access to if none are provided | Optional |
+| vulnerability_id    | Vulnerability external ID | Optional |
+| severity            | Vulnerability Severity | Optional |
+| resolution          | Vulnerability Resolution | Optional |
+| time_field_strategy | Which time field(s) to filter by timestamp start/end | Optional |
+| start_timestamp     | Lower bound timestamp filter value | Optional|
+| end_timestamp       | Upper bound timestamp filter value | Optional|
+| include_deleted     | Whether to include deleted vulnerabilities, not included by default | Optional |
+| sortBy              | Field(s) to sort by | Optional |
+| Offset              | How many vulnerabilities to skip, defaults to 0. The sum of limit and offset must be <= 10'000 | Optional |
+| limit               | How many vulnerabilities to return, defaults to 25. The sum of limit and offset must be <= 10'000 | Optional |
+| context_output      | Set to true to output context data. By default, only print to war room  | Optional |
+
+
+#### Context Output 
+
+| **Path** | **Type** | **Description**                                                           |
+| --- | --- |---------------------------------------------------------------------------|
+| Argus.Vulnerability.data.vulnerabilityID | String | Identifier of vulnerability (e.g. plug-in ID from vulnerability scanner). |
+| Argus.Vulnerability.data.severity | String | Severity of the vulnerability.                                            |
+| Argus.Vulnerability.data.resolution | String | Resolution status of the vulnerability.                                   |
+| Argus.Vulnerability.data.lastUpdatedTimestamp | String | Timestamp when the vulnerability was last updated.                        |
+| Argus.Vulnerability.data.cvss | Number | CVSS of the vulnerability.                                                |
+| Argus.Vulnerability.data.asset.name | String | Name of the asset.                                                        |
+| Argus.Vulnerability.data.id | String | ID of the response object. (unique identifier)                            |
+| Argus.Vulnerability.data.vulnerabilityDefinition.id | String | Unique identifier of the vulnerability definition                         |
+
+#### Command Example
+``` !argus-list-vulnerabilities ```
+
+### argus-get-vulnerability-by-id
+***
+Get vulnerability by unique identifier (UUID).
+
+#### Base Command
+
+`argus-get-vulnerability-by-id`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| vulnerability_uuid | Unique identifier of vulnerability | Required |
+| context_output | Set to true to output context data. By default, only print to war room  | Optional |
+
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| Argus.Vulnerability.data.vulnerabilityID | String | Identifier of vulnerability (e.g. plug-in ID from vulnerability scanner). |
+| Argus.Vulnerability.data.severity | String | Severity of the vulnerability. |
+| Argus.Vulnerability.data.resolution | String | Resolution status of the vulnerability. |
+| Argus.Vulnerability.data.lastUpdatedTimestamp | String | Timestamp when the vulnerability was last updated. |
+| Argus.Vulnerability.data.cvss | Number | CVSS of the vulnerability. |
+| Argus.Vulnerability.data.asset.name | String | Name of the asset. |
+| Argus.Vulnerability.data.id | String | ID of the response object. (unique identifier) |
+| Argus.Vulnerability.data.vulnerabilityDefinition.name | String | Name of vulnerability. |
+
+#### Command Example
+``` !argus-get-vulnerability-by-id vulnerability_uuid=123-abc-456 context_output=true ```
+
+### argus-search-vulnerabilities
+***
+Search Vulnerabilities.
+
+#### Base Command
+
+`argus-search-vulnerabilities`
+
+#### Input
+
+| **Argument Name**   | **Description** | **Required** |
+|---------------------| --- | --- |
+| customer            | Customer ids or short names | Optional |
+| asset               | Asset ids or short names. Will resolve with the provided customers, or those the current user has access to if none are provided | Optional |
+| vulnerability_id    | Vulnerability external ID | Optional |
+| severity            | Vulnerability Severity | Optional |
+| resolution          | Vulnerability Resolution | Optional |
+| time_field_strategy | Which time field(s) to filter by timestamp start/end | Optional |
+| start_timestamp     | Lower bound timestamp filter value | Optional|
+| end_timestamp       | Upper bound timestamp filter value | Optional|
+| include_deleted     | Whether to include deleted vulnerabilities, not included by default | Optional |
+| sortBy              | Field(s) to sort by | Optional |
+| Offset              | How many vulnerabilities to skip, defaults to 0. The sum of limit and offset must be <= 10'000 | Optional |
+| limit               | How many vulnerabilities to return, defaults to 25. The sum of limit and offset must be <= 10'000 | Optional |
+| context_output      | Set to true to output context data. By default, only print to war room  | Optional |
+
+
+#### Context Output 
+
+| **Path** | **Type** | **Description**                                                           |
+| --- | --- |---------------------------------------------------------------------------|
+| Argus.Vulnerability.data.vulnerabilityID | String | Identifier of vulnerability (e.g. plug-in ID from vulnerability scanner). |
+| Argus.Vulnerability.data.severity | String | Severity of the vulnerability.                                            |
+| Argus.Vulnerability.data.resolution | String | Resolution status of the vulnerability.                                   |
+| Argus.Vulnerability.data.lastUpdatedTimestamp | String | Timestamp when the vulnerability was last updated.                        |
+| Argus.Vulnerability.data.cvss | Number | CVSS of the vulnerability.                                                |
+| Argus.Vulnerability.data.asset.name | String | Name of the asset.                                                        |
+| Argus.Vulnerability.data.id | String | ID of the response object. (unique identifier)                            |
+| Argus.Vulnerability.data.vulnerabilityDefinition.id | String | Unique identifier of the vulnerability definition                         |
+
+#### Command Example
+``` !argus-search-vulnerabilities customer=123 severity=high```
+
+### argus-get-vulnerability-definition
+
+***
+Get Vulnerability Definition of specific Vulnerability.
+
+#### Base Command
+
+`argus-get-vulnerability-definition`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| vulnerability_definition_uuid | Unique identifier of vulnerability or vulnerability definition | Required |
+| context_output | Set to true to output context data. By default, only print to war room  | Optional |
+
+
+#### Context Output
+
+| **Path** | **Type** | **Description**                                |
+| --- |----------|------------------------------------------------|
+| Argus.Vulnerability.Definition.data.id | String   | Unique identifier of vulnerability definition. |
+| Argus.Vulnerability.Definition.data.description | String   | Description of the vulnerability.              |
+| Argus.Vulnerability.Definition.data.solution | String   | How to fix vulnerability.                      |
+| Argus.Vulnerability.Definition.data.conclusion | String   | Short summary of vulnerability.                |
+| Argus.Vulnerability.Definition.data.references | String   | References to vulnerability (e.g. CVE number). |
+| Argus.Vulnerability.Definition.data.vulnerabilityDefinition.name | String   | Name of vulnerability.                         |
+
+#### Command Example
+``` !argus-get-vulnerability-definition id_vulnerabilityID=123 ```
